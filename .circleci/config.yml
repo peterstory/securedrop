@@ -81,13 +81,13 @@ jobs:
   rust:
     # Keep version in sync with rust-toolchain.toml
     docker:
-      - image: rust:1.59.0
+      - image: rust:1.61.0
     steps:
       - checkout
       - run:
           name: Install dependencies
           command: |
-            apt-get update && apt-get install make clang nettle-dev -y
+            apt-get update && apt-get install make libssl-dev -y
             rustup component add rustfmt
             rustup component add clippy
       - run:

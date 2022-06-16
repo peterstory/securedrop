@@ -9,7 +9,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install 
                        apache2-dev coreutils vim \
                        python3-pip python3-all python3-venv virtualenv python3-dev libssl-dev \
                        gnupg2 redis-server git curl wget \
-                       enchant libffi-dev sqlite3 gettext sudo tor basez cargo
+                       enchant libffi-dev sqlite3 gettext sudo tor basez cargo pkg-config
 
 COPY requirements requirements
 RUN python3 -m venv /opt/venvs/securedrop-build && \
