@@ -203,25 +203,6 @@ jobs:
           command: |
             cd admin; make test
 
-  updater-gui-tests:
-    docker:
-      - image: debian:bullseye
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            apt update && apt-get install -y libqt5designer5 python3-venv
-            cd journalist_gui
-            python3 -m venv .venv/ && source .venv/bin/activate
-            pip install --require-hashes -r dev-requirements.txt
-      - run:
-          name: Run tests
-          command: |
-            cd journalist_gui
-            source .venv/bin/activate
-            QT_QPA_PLATFORM=offscreen python3 test_gui.py -v
-
   static-analysis-and-no-known-cves:
     machine:
       image: ubuntu-2004:202010-01
@@ -327,12 +308,6 @@ workflows:
           requires:
             - lint
       - admin-tests:
-          filters:
-            branches:
-              ignore:
-                - /i18n-.*/
-                - /update-builder-.*/
-      - updater-gui-tests:
           filters:
             branches:
               ignore:
