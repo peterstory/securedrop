@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import typing
 from typing import Any
 
@@ -26,7 +24,7 @@ class RequiredIf(DataRequired):
         other_field_name: str,
         custom_message: typing.Optional[str] = None,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
 
         self.other_field_name = other_field_name
@@ -47,7 +45,7 @@ class RequiredIf(DataRequired):
                             other_name=self.other_field_name, name=field.name
                         )
                     )
-                super(RequiredIf, self).__call__(form, field)
+                super().__call__(form, field)
             else:
                 field.errors[:] = []
                 raise StopValidation()

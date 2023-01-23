@@ -19,6 +19,7 @@ DEVSHELL := $(SDBIN)/dev-shell
 venv: hooks  ## Provision a Python 3 virtualenv for development.
 	@echo "███ Preparing Python 3 virtual environment..."
 	@$(SDROOT)/devops/scripts/boot-strap-venv.sh
+	@echo "Make sure to run: source .venv/bin/activate"
 	@echo
 
 .PHONY: update-admin-pip-requirements
@@ -28,25 +29,25 @@ update-admin-pip-requirements:  ## Update admin requirements.
 .PHONY: update-python3-requirements
 update-python3-requirements:  ## Update Python 3 requirements with pip-compile.
 	@echo "███ Updating Python 3 requirements files..."
-	@$(DEVSHELL) pip-compile --generate-hashes \
+	@SLIM_BUILD=1 $(DEVSHELL) pip-compile --generate-hashes \
 		--allow-unsafe \
 		--output-file requirements/python3/develop-requirements.txt \
 		../admin/requirements-ansible.in \
 		../admin/requirements.in \
 		requirements/python3/develop-requirements.in
-	@$(DEVSHELL) pip-compile --generate-hashes \
+	@SLIM_BUILD=1 $(DEVSHELL) pip-compile --generate-hashes \
 		--allow-unsafe \
 		--output-file requirements/python3/test-requirements.txt \
 		requirements/python3/test-requirements.in
-	@$(DEVSHELL) pip-compile --generate-hashes \
+	@SLIM_BUILD=1 $(DEVSHELL) pip-compile --generate-hashes \
 				--allow-unsafe \
-		--output-file requirements/python3/securedrop-app-code-requirements.txt \
-		requirements/python3/securedrop-app-code-requirements.in
-	@$(DEVSHELL) pip-compile --generate-hashes \
+		--output-file requirements/python3/requirements.txt \
+		requirements/python3/requirements.in
+	@SLIM_BUILD=1 $(DEVSHELL) pip-compile --generate-hashes \
 		--allow-unsafe \
-		--output-file requirements/python3/docker-requirements.txt \
-		requirements/python3/docker-requirements.in
-	@$(DEVSHELL) pip-compile --generate-hashes \
+		--output-file requirements/python3/bootstrap-requirements.txt \
+		requirements/python3/bootstrap-requirements.in
+	@SLIM_BUILD=1 $(DEVSHELL) pip-compile --generate-hashes \
 		--allow-unsafe \
 		--output-file requirements/python3/translation-requirements.txt \
 		requirements/python3/translation-requirements.in
@@ -64,38 +65,22 @@ update-pip-requirements: update-admin-pip-requirements update-python3-requiremen
 .PHONY: check-black
 check-black: ## Check Python source code formatting with black
 	@echo "███ Running black check..."
-	@black --check --diff securedrop \
-                install_files \
-                journalist_gui \
-                molecule \
-                admin
+	@black --check --diff .
 	@echo
 
 .PHONY: black
 black: ## Update Python source code formatting with black
-	@black securedrop \
-                install_files \
-                journalist_gui \
-                molecule \
-                admin
+	@black securedrop .
 
 .PHONY: check-isort
 check-isort: ## Check Python import organization with isort
 	@echo "███ Running isort check..."
-	@isort --check-only --diff securedrop \
-                install_files \
-                journalist_gui \
-                molecule \
-                admin
+	@isort --check-only --diff .
 	@echo
 
 .PHONY: isort
 isort: ## Update Python import organization with isort
-	@isort securedrop \
-                install_files \
-                journalist_gui \
-                molecule \
-                admin
+	@isort .
 
 .PHONY: ansible-config-lint
 ansible-config-lint: ## Run custom Ansible linting tasks.
@@ -140,10 +125,6 @@ shellcheck:  ## Lint shell scripts.
 	@$(SDROOT)/devops/scripts/shellcheck.sh
 	@echo
 
-.PHONY: shellcheckclean
-shellcheckclean:  ## Clean up temporary container associated with shellcheck target.
-	@docker rm -f $(SDROOT)/shellcheck-targets
-
 .PHONY: typelint
 typelint:  ## Run mypy type linting.
 	@echo "███ Running mypy type checking..."
@@ -173,6 +154,9 @@ safety:  ## Run `safety check` to check python dependencies for vulnerabilities.
 		--ignore 49337 \
 		--ignore 51668 \
 		--ignore 52322 \
+                --ignore 52495 \
+                --ignore 52510 \
+                --ignore 52518 \
 		--full-report -r $$req_file \
 		&& echo -e '\n' \
 		|| exit 1; \
@@ -416,7 +400,7 @@ vagrant-package:  ## Package a Vagrant box of the last stable SecureDrop release
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ":  ##" and any make targets that might appear between : and ##
 # 2. Use sed-like syntax to remove the make targets
-# 3. Format the split fields into $$1) the target name (in blue) and $$2) the target descrption
+# 3. Format the split fields into $$1) the target name (in blue) and $$2) the target description
 # 4. Pass this file as an arg to awk
 # 5. Sort it alphabetically
 # 6. Format columns with colon as delimiter.

@@ -10,6 +10,7 @@ from base64 import b64decode
 from io import BytesIO
 from pathlib import Path
 from typing import Tuple
+from unittest.mock import call, patch
 
 import journalist_app as journalist_app_module
 import pytest
@@ -20,7 +21,6 @@ from flask import escape, g, url_for
 from flask_babel import gettext, ngettext
 from journalist_app.sessions import session
 from journalist_app.utils import mark_seen
-from mock import call, patch
 from models import (
     InstanceConfig,
     InvalidPasswordLength,
@@ -2303,7 +2303,7 @@ def test_logo_default_available(journalist_app, config):
 def test_logo_upload_with_valid_image_succeeds(config, journalist_app, test_admin, locale):
     # Save original logo to restore after test run
     logo_image_location = os.path.join(config.SECUREDROP_ROOT, "static/i/logo.png")
-    with io.open(logo_image_location, "rb") as logo_file:
+    with open(logo_image_location, "rb") as logo_file:
         original_image = logo_file.read()
 
     try:
@@ -2342,7 +2342,7 @@ def test_logo_upload_with_valid_image_succeeds(config, journalist_app, test_admi
             assert response.data == logo_bytes
     finally:
         # Restore original image to logo location for subsequent tests
-        with io.open(logo_image_location, "wb") as logo_file:
+        with open(logo_image_location, "wb") as logo_file:
             logo_file.write(original_image)
 
 
@@ -2376,7 +2376,7 @@ def test_logo_upload_with_invalid_filetype_fails(config, journalist_app, test_ad
 def test_logo_upload_save_fails(config, journalist_app, test_admin, locale):
     # Save original logo to restore after test run
     logo_image_location = os.path.join(config.SECUREDROP_ROOT, "static/i/logo.png")
-    with io.open(logo_image_location, "rb") as logo_file:
+    with open(logo_image_location, "rb") as logo_file:
         original_image = logo_file.read()
 
     try:
@@ -2414,7 +2414,7 @@ def test_logo_upload_save_fails(config, journalist_app, test_admin, locale):
                         ins.assert_message_flashed(gettext(msgids[0]), "logo-error")
     finally:
         # Restore original image to logo location for subsequent tests
-        with io.open(logo_image_location, "wb") as logo_file:
+        with open(logo_image_location, "wb") as logo_file:
             logo_file.write(original_image)
 
 
@@ -2580,7 +2580,7 @@ def test_passphrase_migration_on_verification(journalist_app):
     assert journalist.pw_salt is None
     assert journalist.pw_hash is None
 
-    # check that that a verification post-migration works
+    # check that a verification post-migration works
     assert journalist.valid_password(VALID_PASSWORD)
 
 
@@ -2603,7 +2603,7 @@ def test_passphrase_migration_on_reset(journalist_app):
     assert journalist.pw_salt is None
     assert journalist.pw_hash is None
 
-    # check that that a verification post-migration works
+    # check that a verification post-migration works
     assert journalist.valid_password(VALID_PASSWORD)
 
 
@@ -3140,7 +3140,7 @@ def test_download_selected_submissions_and_replies(
                 os.path.join(
                     source.journalist_filename,
                     source.journalist_designation,
-                    "%s_%s" % (filename.split("-")[0], source.last_updated.date()),
+                    "{}_{}".format(filename.split("-")[0], source.last_updated.date()),
                     filename,
                 )
             )
@@ -3214,7 +3214,7 @@ def test_download_selected_submissions_and_replies_previously_seen(
                 os.path.join(
                     source.journalist_filename,
                     source.journalist_designation,
-                    "%s_%s" % (filename.split("-")[0], source.last_updated.date()),
+                    "{}_{}".format(filename.split("-")[0], source.last_updated.date()),
                     filename,
                 )
             )
@@ -3274,7 +3274,7 @@ def test_download_selected_submissions_previously_downloaded(
                 os.path.join(
                     source.journalist_filename,
                     source.journalist_designation,
-                    "%s_%s" % (filename.split("-")[0], source.last_updated.date()),
+                    "{}_{}".format(filename.split("-")[0], source.last_updated.date()),
                     filename,
                 )
             )
@@ -3329,7 +3329,7 @@ def test_download_selected_submissions_missing_files(
             .joinpath(file)
             .as_posix()
         )
-        expected_calls.append(call("File {} not found".format(missing_file)))
+        expected_calls.append(call(f"File {missing_file} not found"))
 
     mocked_error_logger.assert_has_calls(expected_calls)
 
@@ -3366,7 +3366,7 @@ def test_download_single_submission_missing_file(
         .as_posix()
     )
 
-    mocked_error_logger.assert_called_once_with("File {} not found".format(missing_file))
+    mocked_error_logger.assert_called_once_with(f"File {missing_file} not found")
 
 
 def test_download_unread_all_sources(journalist_app, test_journo, app_storage):
@@ -3759,7 +3759,7 @@ def test_app_error_handlers_defined(journalist_app):
 
 
 def test_lazy_deleted_journalist_creation(journalist_app):
-    """test lazy creation of "deleted" jousrnalist works"""
+    """test lazy creation of "deleted" journalist works"""
     not_found = Journalist.query.filter_by(username="deleted").one_or_none()
     assert not_found is None, "deleted journalist doesn't exist yet"
     deleted = Journalist.get_deleted()
@@ -3787,7 +3787,7 @@ def test_journalist_deletion(journalist_app, app_storage):
     db.session.commit()
     # Only one login attempt in the table
     assert len(JournalistLoginAttempt.query.all()) == 1
-    # And four SeenReplys
+    # And four SeenReply instances
     assert len(SeenReply.query.all()) == 4
     # Delete the journalists
     journalist.delete()

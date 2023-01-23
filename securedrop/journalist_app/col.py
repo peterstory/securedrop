@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from pathlib import Path
 
 import werkzeug
@@ -130,7 +128,7 @@ def make_blueprint() -> Blueprint:
     def download_single_file(filesystem_id: str, fn: str) -> werkzeug.Response:
         """
         Marks the file being download (the file being downloaded is either a submission message,
-        submission file attachement, or journalist reply) as seen by the current logged-in user and
+        submission file attachment, or journalist reply) as seen by the current logged-in user and
         send the file to a client to be saved or opened.
         """
         if ".." in fn or fn.startswith("/"):
@@ -145,7 +143,7 @@ def make_blueprint() -> Blueprint:
                 ),
                 "error",
             )
-            current_app.logger.error("File {} not found".format(file))
+            current_app.logger.error(f"File {file} not found")
             return redirect(url_for("col.col", filesystem_id=filesystem_id))
 
         # mark as seen by the current user
@@ -161,7 +159,7 @@ def make_blueprint() -> Blueprint:
                 message = Submission.query.filter(Submission.filename == fn).one()
                 mark_seen([message], journalist)
         except NoResultFound as e:
-            current_app.logger.error("Could not mark {} as seen: {}".format(fn, e))
+            current_app.logger.error(f"Could not mark {fn} as seen: {e}")
 
         return send_file(
             Storage.get_default().path(filesystem_id, fn),
