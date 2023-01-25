@@ -8,14 +8,6 @@
     owner: amnesia
     group: amnesia
 
-- name: Copy SecureDrop logo for desktop icons to dotfiles directory.
-  become: yes
-  copy:
-    src: securedrop_icon.png
-    dest: "{{ tails_config_securedrop_dotfiles }}/"
-    owner: amnesia
-    group: amnesia
-
 # Script used to append torrc additions. Triggered by NetworkManager hook.
 # Resides in dotfiles in order to achieve persistence.
 - name: Copy SecureDrop network hook for Tor config.

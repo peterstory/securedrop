@@ -16,10 +16,6 @@ if os.geteuid() != 0:
 path_torrc_additions = "/home/amnesia/Persistent/.securedrop/torrc_additions"
 path_torrc_backup = "/etc/tor/torrc.bak"
 path_torrc = "/etc/tor/torrc"
-path_desktop = "/home/amnesia/Desktop/"
-path_persistent_desktop = (
-    "/lib/live/mount/persistence/TailsData_unlocked/dotfiles/Desktop/"  # noqa: E501
-)
 path_securedrop_root = "/home/amnesia/Persistent/securedrop"
 path_securedrop_admin_venv = os.path.join(path_securedrop_root, "admin/.venv3/bin/python")
 path_securedrop_admin_init = os.path.join(
@@ -96,8 +92,6 @@ try:
 except subprocess.CalledProcessError:
     sys.exit("Error restarting Tor")
 
-# Set journalist.desktop and source.desktop links as trusted with Nautilus (see
-# https://github.com/freedomofpress/securedrop/issues/2586)
 # set euid and env variables to amnesia user
 amnesia_gid = grp.getgrnam("amnesia").gr_gid
 amnesia_uid = pwd.getpwnam("amnesia").pw_uid
@@ -112,21 +106,6 @@ env["XDG_DATA_DIR"] = "/usr/share/gnome:/usr/local/share/:/usr/share/"
 env["HOME"] = "/home/amnesia"
 env["LOGNAME"] = "amnesia"
 env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path=/run/user/{amnesia_uid}/bus"
-
-# remove existing shortcut, recreate symlink and change metadata attribute
-# to trust .desktop
-for shortcut in ["source.desktop", "journalist.desktop"]:
-    subprocess.call(["rm", path_desktop + shortcut], env=env)
-    subprocess.call(
-        ["ln", "-s", path_persistent_desktop + shortcut, path_desktop + shortcut], env=env
-    )
-    subprocess.call(["gio", "set", path_desktop + shortcut, "metadata::trusted", "true"], env=env)
-
-# in Tails 4, reload gnome-shell desktop icons extension to update with changes above
-with open("/etc/os-release") as f:
-    is_tails = "TAILS_PRODUCT_NAME" in f.read()
-if is_tails:
-    subprocess.call(["gnome-shell-extension-tool", "-r", "desktop-icons@csoriano"], env=env)
 
 # enable the GNOME Shell Extension
 subprocess.call(["gnome-extensions", "enable", "securedrop@securedrop.freedom.press"], env=env)
