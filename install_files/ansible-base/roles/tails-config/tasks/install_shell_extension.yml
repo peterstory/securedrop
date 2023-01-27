@@ -11,7 +11,7 @@
   
 - name: Check for site specific file
   stat:
-    path: site-specific
+    path: group_vars/all/site-specific
   register: site_specific_file
 
 - name: Look up v3 Source Interface URL.
@@ -27,7 +27,7 @@
   when: v3_source_file.stat.exists == true
   
 - name: Look up app server hostname
-  command: "awk -v FS='app_hostname: ' 'NF>1{print $2}' site-specific"
+  command: "awk -v FS='app_hostname: ' 'NF>1{print $2}' group_vars/all/site-specific"
   changed_when: false
   register: app_server_lookup_result
   when: site_specific_file.stat.exists == true
@@ -132,8 +132,8 @@
 - name: Create SecureDrop extension
   become: yes
   template:
-    src: extension.js.in
-    dest: extension.js
+    src: "{{ item.0.src }}"
+    dest: "{{ item.1 }}/{{ item.0.filename }}"
     owner: amnesia
     group: amnesia
     mode: "0700"
