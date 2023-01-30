@@ -8,7 +8,7 @@
   stat:
     path: app-journalist.auth_private
   register: v3_journalist_file
-  
+
 - name: Check for site specific file
   stat:
     path: group_vars/all/site-specific
@@ -25,13 +25,13 @@
   changed_when: false
   register: journalistv3_interface_lookup_result
   when: v3_source_file.stat.exists == true
-  
+
 - name: Look up app server hostname
   command: "awk -v FS='app_hostname: ' 'NF>1{print $2}' group_vars/all/site-specific"
   changed_when: false
   register: app_server_lookup_result
   when: site_specific_file.stat.exists == true
-  
+
 - name: Look up mon server hostname
   command: "awk -v FS='monitor_hostname: ' 'NF>1{print $2}' /home/amnesia/Persistent/securedrop/install_files/ansible-base/group_vars/all/site-specific"
   changed_when: false
@@ -43,7 +43,7 @@
     state: directory
     path: "{{ item }}"
   with_items: "{{ tails_config_extension_directories }}"
-  
+
 - name: Set normal user ownership on subset of directories.
   become: yes
   file:
@@ -102,7 +102,7 @@
     dest: "/home/amnesia/.local/share/gnome-shell/extensions/securedrop@securedrop.freedom.press/"
     owner: amnesia
     group: amnesia
-    
+
 - name: Set the right variable for source
   set_fact:
     source_iface: "{{ sourcev3_interface_lookup_result }}"
@@ -110,15 +110,15 @@
 - name: Set the right variable for journalist
   set_fact:
     journalist_iface: "{{ journalistv3_interface_lookup_result }}"
-    
+
 - name: Set the right variable for app server hostname
   set_fact:
     app_hostname: "{{ app_server_lookup_result }}"
-    
+
 - name: Set the right variable for app server hostname
   set_fact:
     mon_hostname: "{{ mon_server_lookup_result }}"
-    
+
 - name: Assemble interface information for extension
   set_fact:
     _securedrop_extension_info:

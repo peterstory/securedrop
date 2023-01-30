@@ -23,7 +23,7 @@ tails_config_desktop_icon_directories:
   - "{{ tails_config_live_dotfiles }}/Desktop"
   - "{{ tails_config_amnesia_home }}/.local/share/applications"
   - "{{ tails_config_live_dotfiles }}/.local/share/applications"
-  
+
 # Destination directories for storing the SecureDrop GNOME Shell
 # extension
 tails_config_extension_directories:
