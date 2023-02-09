@@ -310,7 +310,7 @@ upgrade-destroy:  ## Destroy an upgrade test environment.
 translate:  ## Update POT files from translated strings in source code.
 	@echo "Updating translations..."
 	@$(DEVSHELL) $(SDROOT)/securedrop/i18n_tool.py translate-messages --extract-update
-	@$(DEVSHELL) $(SDROOT)/securedrop/i18n_tool.py translate-desktop --extract-update
+	@$(DEVSHELL) $(SDROOT)/securedrop/i18n_tool.py translate-extension --extract-update
 	@echo
 
 .PHONY: translation-test

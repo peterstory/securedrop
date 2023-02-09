@@ -26,7 +26,7 @@ I18N_CONF = os.path.join(os.path.dirname(__file__), "i18n.json")
 # paths (values) relative to the repository root.
 LOCALE_DIR = {
     "securedrop": "securedrop/translations",
-    "desktop": "install_files/ansible-base/roles/tails-config/templates",
+    "extension": "install_files/ansible-base/roles/tails-config/templates",
 }
 
 
@@ -39,7 +39,8 @@ class I18NTool:
     #
     # name: English name of the language to the documentation, not for
     #       display in the interface.
-    # desktop: The language code used for desktop icons.
+    # extension: The language code used for the SecureDrop GNOME Shell
+    #            extension.
     #
     with open(I18N_CONF) as i18n_conf:
         conf = json.load(i18n_conf)
@@ -126,18 +127,16 @@ class I18NTool:
                 stderr=subprocess.DEVNULL,
             )
 
-    def translate_desktop(self, args: argparse.Namespace) -> None:
-        messages_file = Path(args.translations_dir).absolute() / "desktop.pot"
+    def translate_extension(self, args: argparse.Namespace) -> None:
+        messages_file = Path(args.translations_dir).absolute() / "extension.pot"
 
         if args.extract_update:
             sources = args.sources.split(",")
             subprocess.check_call(
                 [
                     "xgettext",
-                    "--output=desktop.pot",
-                    "--language=Desktop",
-                    "--keyword",
-                    "--keyword=Name",
+                    "--output=extension.pot",
+                    "--language=JavaScript",
                     "--package-version",
                     args.version,
                     "--msgid-bugs-address=securedrop@freedom.press",
@@ -160,7 +159,7 @@ class I18NTool:
                     subprocess.check_call(["msgmerge", "--update", po_file, messages_file])
                 log.warning(f"messages translations updated in {messages_file}")
             else:
-                log.warning("desktop translations are already up to date")
+                log.warning("extension translations are already up to date")
 
         if args.compile:
             pos = [f for f in os.listdir(args.translations_dir) if f.endswith(".po")]
@@ -175,7 +174,6 @@ class I18NTool:
                     subprocess.check_call(
                         [
                             "msgfmt",
-                            "--desktop",
                             "--template",
                             source,
                             "-o",
@@ -185,23 +183,10 @@ class I18NTool:
                         ],
                         cwd=args.translations_dir,
                     )
-                    self.sort_desktop_template(join(args.translations_dir, target))
+                    self.sort_extension_template(join(args.translations_dir, target))
             finally:
                 if os.path.exists(linguas_file):
                     os.unlink(linguas_file)
-
-    def sort_desktop_template(self, template: str) -> None:
-        """
-        Sorts the lines containing the icon names.
-        """
-        lines = open(template).readlines()
-        names = sorted(l for l in lines if l.startswith("Name"))
-        others = (l for l in lines if not l.startswith("Name"))
-        with open(template, "w") as new_template:
-            for line in others:
-                new_template.write(line)
-            for line in names:
-                new_template.write(line)
 
     def set_translate_parser(
         self, parser: argparse.ArgumentParser, translations_dir: str, sources: str
@@ -246,18 +231,18 @@ class I18NTool:
         )
         parser.set_defaults(func=self.translate_messages)
 
-    def set_translate_desktop_parser(self, subps: _SubParsersAction) -> None:
+    def set_translate_extension_parser(self, subps: _SubParsersAction) -> None:
         parser = subps.add_parser(
-            "translate-desktop", help=("Update and compile " "desktop icons translations")
+            "translate-extension", help=("Update and compile SecureDrop GNOME Shell extension translations")
         )
         translations_dir = join(
             dirname(realpath(__file__)),
             "..",
-            LOCALE_DIR["desktop"],
+            LOCALE_DIR["extension"],
         )
-        sources = "desktop-journalist-icon.j2.in,desktop-source-icon.j2.in"
+        sources = "extension.js.in"
         self.set_translate_parser(parser, translations_dir, sources)
-        parser.set_defaults(func=self.translate_desktop)
+        parser.set_defaults(func=self.translate_extension)
 
     @staticmethod
     def require_git_email_name(git_dir: str) -> bool:
@@ -345,21 +330,21 @@ class I18NTool:
             add(path)
 
             # Only supported locales may have changes that need to be staged from the
-            # securedrop/desktop component, because the link between the two components
+            # securedrop/extension component, because the link between the two components
             # is defined in I18N_CONF when a language is marked supported.
             try:
                 info = self.supported_languages[code]
                 name = info["name"]
-                desktop_code = info["desktop"]
+                extension_code = info["extension"]
                 path = join(
-                    LOCALE_DIR["desktop"],
-                    f"{desktop_code}.po",  # noqa: E741
+                    LOCALE_DIR["extension"],
+                    f"{extension_code}.po",  # noqa: E741
                 )
                 add(path)
             except KeyError:
                 log.info(
                     f"{code} has translations but is not marked as supported; "
-                    f"skipping desktop translation"
+                    f"skipping extension translation"
                 )
                 name = code
 
@@ -578,7 +563,7 @@ class I18NTool:
     def list_translators(self, args: argparse.Namespace) -> None:
         self.ensure_i18n_remote(args)
         app_template = "{}/{}/LC_MESSAGES/messages.po"
-        desktop_template = LOCALE_DIR["desktop"] + "/{}.po"
+        extension_template = LOCALE_DIR["extension"] + "/{}.po"
         since = None
         if args.all:
             print("Listing all translators who have ever helped")
@@ -589,7 +574,7 @@ class I18NTool:
             translators = set()
             paths = [
                 app_template.format(LOCALE_DIR["securedrop"], code),
-                desktop_template.format(info["desktop"]),
+                extension_template.format(info["extension"]),
             ]
             for path in paths:
                 try:
@@ -613,7 +598,7 @@ class I18NTool:
         subps = parser.add_subparsers()
 
         self.set_translate_messages_parser(subps)
-        self.set_translate_desktop_parser(subps)
+        self.set_translate_extension_parser(subps)
         self.set_update_docs_parser(subps)
         self.set_update_from_weblate_parser(subps)
         self.set_list_translators_parser(subps)
