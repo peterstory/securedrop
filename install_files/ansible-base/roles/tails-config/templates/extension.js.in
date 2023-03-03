@@ -2,7 +2,7 @@
 
 const GETTEXT_DOMAIN = 'securedrop';
 
-const {Clutter, GObject, GLib, St } = imports.gi;
+const {Clutter, GObject, GLib } = imports.gi;
 
 const Util = imports.misc.util;
 const Gettext = imports.gettext;
