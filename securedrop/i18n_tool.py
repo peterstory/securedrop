@@ -26,7 +26,6 @@ I18N_CONF = os.path.join(os.path.dirname(__file__), "i18n.json")
 # paths (values) relative to the repository root.
 LOCALE_DIR = {
     "securedrop": "securedrop/translations",
-    "extension": "install_files/ansible-base/roles/tails-config/templates",
 }
 
 
@@ -62,7 +61,7 @@ class I18NTool:
             subprocess.check_call(["git", "remote", "add", "i18n", args.url], **k)
         subprocess.check_call(["git", "fetch", "i18n"], **k)
 
-    def translate_messages(self, args: argparse.Namespace) -> None:
+    def translate(self, args: argparse.Namespace) -> None:
         messages_file = Path(args.translations_dir).absolute() / "messages.pot"
 
         if args.extract_update:
@@ -127,8 +126,7 @@ class I18NTool:
                 stderr=subprocess.DEVNULL,
             )
 
-    def translate_extension(self, args: argparse.Namespace) -> None:
-        messages_file = Path(args.translations_dir).absolute() / "extension.pot"
+        extension_file = Path(args.translations_dir).absolute() / "extension.pot"
 
         if args.extract_update:
             sources = args.sources.split(",")
@@ -145,19 +143,29 @@ class I18NTool:
                 ],
                 cwd=args.translations_dir,
             )
-            msg_file_content = messages_file.read_text()
+            extension_file_content = extension_file.read_text()
             updated_content = _remove_from_content_line_with_text(
-                text='"POT-Creation-Date:', content=msg_file_content
+                text='"POT-Creation-Date:', content=extension_file_content
             )
-            messages_file.write_text(updated_content)
+            extension_file.write_text(updated_content)
 
-            if self.file_is_modified(str(messages_file)):
-                for f in os.listdir(args.translations_dir):
-                    if not f.endswith(".po"):
-                        continue
-                    po_file = os.path.join(args.translations_dir, f)
-                    subprocess.check_call(["msgmerge", "--update", po_file, messages_file])
-                log.warning(f"messages translations updated in {messages_file}")
+            if (
+                self.file_is_modified(str(extension_file))
+                and len(os.listdir(args.translations_dir)) > 1
+            ):
+                tglob = f"{args.translations_dir}/*/LC_EXTENSION/*.po"
+                for translation in glob.iglob(tglob):
+                    subprocess.check_call(
+                        [
+                            "msgmerge",
+                            "--previous",
+                            "--update",
+                            "--no-wrap",
+                            translation,
+                            extension_file,
+                        ]
+                    )
+                log.warning(f"extension translations updated in {extension_file}")
             else:
                 log.warning("extension translations are already up to date")
 
@@ -188,7 +196,7 @@ class I18NTool:
                 if os.path.exists(linguas_file):
                     os.unlink(linguas_file)
 
-    def set_translate_parser(
+    def set_translate_parser_args(
         self, parser: argparse.ArgumentParser, translations_dir: str, sources: str
     ) -> None:
         parser.add_argument(
@@ -216,33 +224,20 @@ class I18NTool:
             help=f"Source files and directories to extract (default {sources})",
         )
 
-    def set_translate_messages_parser(self, subps: _SubParsersAction) -> None:
+    def set_translate_parser(self, subps: _SubParsersAction) -> None:
         parser = subps.add_parser(
-            "translate-messages", help=("Update and compile " "source and template translations")
+            "translate", help=("Update and compile " "source and template translations")
         )
         translations_dir = join(dirname(realpath(__file__)), "translations")
         sources = ".,source_templates,journalist_templates"
-        self.set_translate_parser(parser, translations_dir, sources)
+        self.set_translate_parser_args(parser, translations_dir, sources)
         mapping = "babel.cfg"
         parser.add_argument(
             "--mapping",
             default=mapping,
             help=f"Mapping of files to consider (default {mapping})",
         )
-        parser.set_defaults(func=self.translate_messages)
-
-    def set_translate_extension_parser(self, subps: _SubParsersAction) -> None:
-        parser = subps.add_parser(
-            "translate-extension", help=("Update and compile SecureDrop GNOME Shell extension translations")
-        )
-        translations_dir = join(
-            dirname(realpath(__file__)),
-            "..",
-            LOCALE_DIR["extension"],
-        )
-        sources = "extension.js.in"
-        self.set_translate_parser(parser, translations_dir, sources)
-        parser.set_defaults(func=self.translate_extension)
+        parser.set_defaults(func=self.translate)
 
     @staticmethod
     def require_git_email_name(git_dir: str) -> bool:
@@ -597,8 +592,7 @@ class I18NTool:
         parser.add_argument("-v", "--verbose", action="store_true")
         subps = parser.add_subparsers()
 
-        self.set_translate_messages_parser(subps)
-        self.set_translate_extension_parser(subps)
+        self.set_translate_parser(subps)
         self.set_update_docs_parser(subps)
         self.set_update_from_weblate_parser(subps)
         self.set_list_translators_parser(subps)
